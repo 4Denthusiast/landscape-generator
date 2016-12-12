@@ -1,0 +1,1 @@
+Class-Path: lwjgl/jar/lwjgl.jar lwjgl/jar/lwjgl_util.jar

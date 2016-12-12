@@ -1,0 +1,109 @@
+	public HeightMap(int size, double weighting){
+		long time = System.currentTimeMillis();
+		this.size = size;
+		this.weighting = weighting;
+		this.random = new Random();
+		this.landscape = new double[size][size];
+		Complex[][] mantle = getRandomComplexes(0.9);//The driving forcse behind the platess
+		tectonics = new Complex[size][size];
+		for(int i=0; i<size; i++){
+			for(int j=0; j<size; j++)
+				tectonics[i][j] = mantle[i][j];
+		}
+		double[][] gradientSq = new double[size][size];
+		Complex[][] xDifferences = new Complex[size][size];
+		Complex[][] yDifferences = new Complex[size][size];
+		for(int iterations = 0; iterations<size; iterations++){//ko gasnu lo du'u ti zebna lo ka mirlanxe
+			//double mantleInteraction = Math.exp(-2-8*iterations/(double)size);//The interaction sstrength should gradually tail off.
+			for(int i=0; i<size; i++){
+				for(int j=0; j<size; j++)
+					gradientSq[i][j] = 0;
+			}
+			for(int i=0; i<size; i++){
+				for(int j=0; j<size; j++){
+					xDifferences[i][j] = tectonics[i][j].minus(tectonics[(i+1)%size][j]);
+					double xGradientSq = xDifferences[i][j].re()*xDifferences[i][j].re() + xDifferences[i][j].im()*xDifferences[i][j].im();
+					yDifferences[i][j] = tectonics[i][j].minus(tectonics[i][(j+1)%size]);
+					double yGradientSq = yDifferences[i][j].re()*yDifferences[i][j].re() + yDifferences[i][j].im()*yDifferences[i][j].im();
+					gradientSq[i][j] += xGradientSq+yGradientSq;
+					gradientSq[(i+1)%size][j] += xGradientSq;
+					gradientSq[i][(j+1)%size] += yGradientSq;
+				}
+			}
+			for(int i=0; i<size; i++){
+				for(int j=0; j<size; j++){
+					//tectonics[i][j] = tectonics[i][j].times(1-mantleInteraction).plus(mantle[i][j].times(mantleInteraction));
+					double multiplier = 0;
+					if(gradientSq[i][j]*size<0.1)
+						multiplier = 0.25;
+					else if(gradientSq[i][j]*size<0.01)
+						multiplier = (1-gradientSq[i][j]*size)*0.25;
+					else
+						multiplier = 0;
+					
+					Complex rightDifference = xDifferences[i][j].times(multiplier);
+					tectonics[i][j] = tectonics[i][j].minus(rightDifference);
+					//tectonics[(i+1)%size][j] = tectonics[(i+1)%size][j].plus(rightDifference);
+					
+					Complex upDifference = yDifferences[i][j].times(multiplier);
+					tectonics[i][j] = tectonics[i][j].minus(upDifference);
+					//tectonics[i][(j+1)%size] = tectonics[i][(j+1)%size].plus(upDifference);
+					
+					Complex leftDifference = xDifferences[(i+size-1)%size][j].times(-multiplier);
+					tectonics[i][j] = tectonics[i][j].minus(leftDifference);
+					//tectonics[(i+size-1)%size][j] = tectonics[(i+size-1)%size][j].plus(leftDifference);
+					
+					Complex downDifference = yDifferences[i][(j+size-1)%size].times(-multiplier);
+					tectonics[i][j] = tectonics[i][j].minus(downDifference);
+					//tectonics[i][(j+size-1)%size] = tectonics[i][(j+size-1)%size].plus(downDifference);
+				}
+			}
+		}
+		System.out.println("Done tectonics");
+		rockiness = new double[size][size];
+		for(int i=0; i<size; i++){
+			for(int j=0; j<size; j++)
+				rockiness[i][j]=1;
+		}
+		for(int iterations = 0; iterations<size; iterations++){
+			for(int i=0; i<size; i++){
+				for(int j=0; j<size; j++){
+					double sum = rockiness[i][j] + rockiness[(i+1)%size][j];
+					rockiness[ i        ][j] = sum*(1+tectonics[i][j].re()*0.07)/2;
+					rockiness[(i+1)%size][j] = sum*(1-tectonics[i][j].re()*0.07)/2;
+					
+					sum = rockiness[i][j] + rockiness[i][(j+1)%size];
+					rockiness[i][ j        ] = sum*(1+tectonics[i][j].im()*0.07)/2;
+					rockiness[i][(j+1)%size] = sum*(1-tectonics[i][j].im()*0.07)/2;
+				}
+			}
+		}
+		double maxV = 0;
+		double maxRocks = 0;
+		for(int i=0; i<size; i++){
+			for(int j=0; j<size; j++){
+				maxV = Math.max(maxV, tectonics[i][j].abs());
+				maxRocks = Math.max(maxRocks, rockiness[i][j]);
+			}
+		}
+		for(int i=0; i<size; i++){
+			for(int j=0; j<size; j++){
+				tectonics[i][j] = tectonics[i][j].times(0.49/maxV);
+				rockiness[i][j] /= maxRocks;
+			}
+		}
+		System.out.println("max plate speed: "+maxV);
+		if(LandscapeGenerator.extremeDebug){
+			for(int j=size-1; j>=0; j--){
+				System.out.print(String.format("%2d [", j));
+				for(int i=0; i<size; i++)
+					System.out.print(String.format("%+.4f, ",landscape[i][j]).substring(3));
+				System.out.println("]");
+			}
+			for(int i=0; i<size; i++)
+				System.out.print(String.format("%6d", i));
+			System.out.println();
+		}
+		spareData = null;//I won't be needing thiss again.
+		System.out.println("Time to generate heightMap: "+(System.currentTimeMillis()-time));
+	}
