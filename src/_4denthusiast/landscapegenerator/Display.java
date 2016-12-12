@@ -78,42 +78,8 @@ class Display extends JFrame{
 				g.drawImage(preBuffer, i, j, null);
 			}
 		}
-		if(water != null && water.flow != null){
-			synchronized(water.flow){
-				double maxPotential = Double.NEGATIVE_INFINITY;
-				double minPotential = Double.POSITIVE_INFINITY;
-				double maxResidual = Double.NEGATIVE_INFINITY;
-				for(int i=0; i<size; i++){
-					for(int j=0; j<size; j++){
-						if(water.getLake(i,j)==null || water.getDrainage(i,j)<0.5*size*size)
-							continue;
-						Point p = new Point(i,j);
-						maxPotential = Math.max(maxPotential, water.flow.getPotential(p));
-						minPotential = Math.min(minPotential, water.flow.getPotential(p));
-						maxResidual = Math.max(maxResidual, Math.abs(water.flow.getResidual(p)));
-					}
-				}
-				for(int i=0; i<size; i++){
-					for(int j=0; j<size; j++){
-						if(!water.isLake(i,j) || water.getDrainage(i,j)<0.5*size*size)
-							continue;
-						Point p = new Point(i,j);
-						float scaledPotential = (float)((water.flow.getPotential(p)-minPotential)/(maxPotential-minPotential));
-						float scaledResidual = (float)(water.flow.getResidual(p)/maxResidual);
-						if(scaledPotential<0 || scaledResidual<-1)
-							g.setColor(Color.RED);
-						else if(scaledPotential>1 || scaledResidual>1)
-							g.setColor(Color.YELLOW);
-						else if(!water.flow.getSolved())
-							g.setColor(new Color(Math.max(-scaledResidual,0), Math.max(scaledResidual,0), scaledPotential));
-						else
-							g.setColor(new Color(0, scaledPotential/2, scaledPotential));
-						g.fillRect(i+topInset,j,1,1);
-					}
-				}
-			}
-		}
 		if(cPanel != null && cPanel.shouldDisplayDiagonal()){
+			//Check for offsets in the coordinates used.
 			g.setColor(Color.WHITE);
 			g.drawLine(0,0,size,size);
 		}

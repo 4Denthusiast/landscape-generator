@@ -73,16 +73,6 @@ public class LandscapeGenerator{
 		}
 	}
 	
-	public void generateFlow(){
-		/*generateWater();
-		new Thread(){
-			public void run(){
-				if(water instanceof DefaultWater)
-					((DefaultWater)water).computeFlow();
-			}
-		}.start();*/
-	}
-	
 	public void generateSettlements(){
 		if(settlements == null){
 			generateWater();

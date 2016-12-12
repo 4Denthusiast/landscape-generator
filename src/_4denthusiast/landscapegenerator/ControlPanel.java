@@ -25,7 +25,6 @@ public class ControlPanel extends JFrame implements ActionListener, ChangeListen
 	
 	private JButton genHeightButton;
 	private JButton genWaterButton;
-	private JButton genFlowButton;
 	private JButton genSettlementsButton;
 	private JButton genRoadsButton;
 	
@@ -84,12 +83,10 @@ public class ControlPanel extends JFrame implements ActionListener, ChangeListen
 		JLabel generationLabel = new JLabel("Generation steps");
 		genHeightButton = new JButton("Height map");
 		genWaterButton = new JButton("Water");
-		genFlowButton = new JButton("Lake flow");
 		genSettlementsButton = new JButton("Settlements");
 		genRoadsButton = new JButton("Roads");
 		genHeightButton.addActionListener(this);
 		genWaterButton.addActionListener(this);
-		genFlowButton.addActionListener(this);
 		genSettlementsButton.addActionListener(this);
 		genRoadsButton.addActionListener(this);
 		
@@ -143,10 +140,7 @@ public class ControlPanel extends JFrame implements ActionListener, ChangeListen
 					.addComponent(genWaterButton)
 				)
 				.addGroup(layout.createParallelGroup()
-					.addComponent(genFlowButton)
 					.addComponent(genSettlementsButton)
-				)
-				.addGroup(layout.createParallelGroup()
 					.addComponent(genRoadsButton)
 				)
 				.addComponent(progressBar)
@@ -185,20 +179,19 @@ public class ControlPanel extends JFrame implements ActionListener, ChangeListen
 				.addGroup(layout.createSequentialGroup()
 					.addGroup(layout.createParallelGroup()
 						.addComponent(genHeightButton)
-						.addComponent(genFlowButton)
-						.addComponent(genRoadsButton)
+						.addComponent(genSettlementsButton)
 					)
 					.addGroup(layout.createParallelGroup()
 						.addComponent(genWaterButton)
-						.addComponent(genSettlementsButton)
+						.addComponent(genRoadsButton)
 					)
 				)
 				.addComponent(progressBar)
 			)
 			.addComponent(sep2)
 			.addComponent(saveButton);
-		layout.linkSize(SwingConstants.HORIZONTAL, genHeightButton, genFlowButton, genRoadsButton);
-		layout.linkSize(SwingConstants.HORIZONTAL, genWaterButton, genSettlementsButton);
+		layout.linkSize(SwingConstants.HORIZONTAL, genHeightButton, genSettlementsButton);
+		layout.linkSize(SwingConstants.HORIZONTAL, genWaterButton, genRoadsButton);
 		
 		layout.setVerticalGroup(vLayout);
 		layout.setHorizontalGroup(hLayout);
@@ -308,8 +301,6 @@ public class ControlPanel extends JFrame implements ActionListener, ChangeListen
 			landscapeGenerator.generateHeightMap();
 		else if(e.getSource() == genWaterButton)
 			landscapeGenerator.generateWater();
-		else if(e.getSource() == genFlowButton)
-			landscapeGenerator.generateFlow();
 		else if(e.getSource() == genSettlementsButton)
 			landscapeGenerator.generateSettlements();
 		else if(e.getSource() == genRoadsButton)

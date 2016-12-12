@@ -247,14 +247,7 @@ public class HeightMap implements IHeightMap{
 			for(int j=0; j<size; j++)
 				landscape[i][j] = other.getHeight(i,j);
 		}
-		weighting = Double.NaN; //Thiss really isn't needed.
-	}
-	
-	public void erode(Water water){
-		for(int i=0; i<size; i++){
-			for(int j=0; j<size; j++)
-				landscape[i][j] = water.getErosion(i, j)/5000d;
-		}
+		weighting = Double.NaN; //Thiss isn't really needed.
 	}
 	
 	// Print out a matrix of the height-values themselves (in case there are any more awful bugs)

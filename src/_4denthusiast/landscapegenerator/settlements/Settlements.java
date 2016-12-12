@@ -71,10 +71,6 @@ public class Settlements{
 		return roads != null;
 	}
 	
-	public void generateBorders(){
-		//borders = new Borders(size, this, roads);
-	}
-	
 	public boolean isOnBorder(IPoint p, double level){
 		return roads.isOnBorder(p, level);
 	}

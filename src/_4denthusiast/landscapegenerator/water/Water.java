@@ -142,13 +142,6 @@ public class Water{
 			return heightMap.getDownhill(p);
 	}
 	
-	public double getErosion(int i, int j){
-		Lake lake = getLake(i, j);
-		if(lake==null)
-			return getDrainage(i, j);
-		return (lake.drainageBasin-lake.set.size()*Lake.evaporation)/Math.sqrt(lake.set.size());
-	}
-	
 	public double normaliseHeight(double h){
 		return (h-seaLevel)/(heightMap.getMaxHeight()-seaLevel);
 	}
@@ -160,6 +153,4 @@ public class Water{
 			return q.equals(heightMap.getDownhill(p));
 		return q.equals(getLake(p).outflow);
 	}
-	
-	public Flow flow;
 }
