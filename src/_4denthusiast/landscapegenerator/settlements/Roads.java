@@ -65,7 +65,6 @@ public class Roads{
 		return getWayPoint(p).getCapital(level).getColour();
 	}
 	
-		private static double shoreWeightingFactor = 16;
 	//Stores a point's navigation information, specifically the nearest 6 or so points which are at least as important and the distances (along roads) to them.
 	//Importance is calculated according to population and amount of links.
 	private class WayPoint implements Comparable<WayPoint>{
@@ -127,6 +126,7 @@ public class Roads{
 				System.out.println("Orphan: "+importance);
 		}
 		
+		private static final double shoreWeightingFactor = 16;
 		//TODO adjusst thiss to take into account different edge lengthss on the ssphere.
 		public double getElementaryDistance(IPoint p1, IPoint p2){
 			if(water.isLake(p1)){

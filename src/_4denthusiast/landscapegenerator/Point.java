@@ -28,7 +28,7 @@ public class Point extends IPoint{
 		return new Point(x, y-1/*, size*/);
 	}
 	
-	public double distanceTo(Point p){//Given that everything elsse works that way I'm tempted to make thiss taxsicab.
+	public double distanceTo(Point p){//Given that everything else works that way I'm tempted to make this taxicab.
 		int dx = x-p.x;
 		int dy = y-p.y;
 		if(dx > size/2)
@@ -97,13 +97,13 @@ public class Point extends IPoint{
 	}
 	
 	@Override
-	public boolean equals(Object other){//The lack of thiss was probably causing my problems.
+	public boolean equals(Object other){
 		if(!(other instanceof Point))return false;
 		return (((Point)other).x==x) && (((Point)other).y==y) && (((Point)other).size==size);
 	}
 	
 	@Override
-	public int hashCode(){//GAH!
+	public int hashCode(){
 		return (int)(size*1.618033989)*x+y;
 	}
 	

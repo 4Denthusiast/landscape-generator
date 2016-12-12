@@ -15,7 +15,6 @@ public class LandscapeGenerator{
 	private Settlements settlements;
 	
 	private HashMap<String, Double> options;
-	private double evaporation;
 	
 	public static boolean extremeDebug = false;
 	
@@ -37,6 +36,7 @@ public class LandscapeGenerator{
 		cPanel = new ControlPanel(this, display, compositionNo);
 	}
 	
+	//Only this one is done in a seperate thread because it usually takes longest and all the mulithreading stuff just to get a loading bar working is a pain.
 	HeightMap.FactoryThread heightMapFactory = null;
 	public void generateHeightMap(){
 		synchronized(this){
@@ -59,13 +59,14 @@ public class LandscapeGenerator{
 	public void generateWater(){
 		if(water == null){
 			generateHeightMap();
-			if(heightMapFactory != null)
+			if(heightMapFactory != null){
 				try{
 					heightMapFactory.get();
 				}catch(Exception e){
 					e.printStackTrace();
 					return;
 				}
+			}
 			water = new Water(options, heightMap, new Point(0,0));
 			display.setWater(water);
 			cPanel.enableWater();
@@ -111,6 +112,4 @@ public class LandscapeGenerator{
 	public void clearProgressBar(){
 		cPanel.clearProgressBar();
 	}
-	
-	
 }

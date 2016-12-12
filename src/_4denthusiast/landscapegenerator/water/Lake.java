@@ -7,18 +7,19 @@ import java.util.HashSet;
 import java.util.Iterator;
 
 class Lake{
-	protected HashSet<IPoint> set;
-	protected PriorityQueue<IPoint> shore;//outsside of the lake
-	private double height;
-	protected IPoint exitPoint;//Jusst insside the lake
-	protected IPoint outflow;//alsso outsside of the lake
+	protected HashSet<IPoint> set;//The points inside the lake
+	protected PriorityQueue<IPoint> shore;//the points outsside of the lake adjacent to it.
+	private double height;//of the surface
+	protected IPoint exitPoint;//The point jusst insside the lake from which water spills over the edge
+	protected IPoint outflow;//where it directly goes to
 	protected double drainageBasin;//thiss should include the area of the lake itsself.
-	private boolean merged;
+	private boolean merged;//for debugging
 	
 	private Water water;
 	private IHeightMap heightMap;
-	protected static double evaporation;
+	protected static double evaporation;//How much water evaporates from the surface relative to the amount of rain.
 	
+	//for debugging
 	private static int lakeCount;
 	private static int mergers;
 	private static int mergeSize;
@@ -151,9 +152,7 @@ class Lake{
 		}
 		for(Iterator<IPoint> i = other.set.iterator(); i.hasNext(); ){
 			addPoint(i.next());
-			//water.lake[p.x][p.y] = this;
 		}
-		//set.addAll(other.set);
 		if(doingHistory && history != null && other.history != null)
 			history = "("+history+"+"+other.history+")";
 		if(set.size()>20 || other.history==null)

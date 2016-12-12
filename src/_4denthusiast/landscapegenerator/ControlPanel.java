@@ -14,7 +14,7 @@ public class ControlPanel extends JFrame implements ActionListener, ChangeListen
 	private GroupLayout.Group vLayout;
 	private GroupLayout.Group hLayout;
 	private JButton reDrawButton;
-	//Eventially I may make this all into an array.
+	//Eventially I may make this all into an array if I add more.
 	private JCheckBox displayDiagonalCheckBox;
 	private JCheckBox displayHeightCheckBox;
 	private JCheckBox displayWaterCheckBox;
@@ -322,9 +322,10 @@ public class ControlPanel extends JFrame implements ActionListener, ChangeListen
 	}
 	
 	public void stateChanged(ChangeEvent e){
-		if(e.getSource() == kingdomCutoffSpinner){ //It had better be.
+		if(e.getSource() == kingdomCutoffSpinner){
 			if(shouldDisplayBorders())
 				display.reDraw();
-		}
+		}else
+			assert false;
 	}
 }

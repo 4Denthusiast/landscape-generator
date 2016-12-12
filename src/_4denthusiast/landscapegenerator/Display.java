@@ -47,6 +47,7 @@ class Display extends JFrame{
 		this.settlements = settlements;
 	}
 	
+	// Generate the image to display (possibly tiled) in the window
 	private void drawBuffer(){
 		preBuffer = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
 		for(int i=0; i<size; i++){
@@ -56,6 +57,7 @@ class Display extends JFrame{
 		}
 	}
 	
+	// A simply downscaled version of the map to use as a toolbar icon. I'm not sure how well this will work with other OSs.
 	private void makeIcon(int n){
 		BufferedImage icon = new BufferedImage(n, n, BufferedImage.TYPE_INT_RGB);
 		for(int i=0; i<n; i++){
@@ -117,6 +119,7 @@ class Display extends JFrame{
 		}
 	}
 	
+	// Get colours for the map in the window
 	public Color getColourAtPoint(int i, int j){
 		Point p = new Point(i,j);
 		if(cPanel != null && (cPanel.shouldDisplaySettlements() || cPanel.shouldDisplayRoads() || cPanel.shouldDisplayBorders())){
@@ -144,6 +147,7 @@ class Display extends JFrame{
 		//return new Color(spline(3,0,2,1,wh)*(1-wet), spline(1.5,0.5,2,1,wh)*(1-wet) , spline(0,0,1,1,wh)*(1-wet)+wet);
 	}
 	
+	// Cubic interpolation with given start & end values & gradients.
 	private float spline(double dl, double l, double dr, double r, float x){
 		return (float)(x*x*x*(-2*r+dl+dr+2*l) + x*x*(-2*dl-dr+3*r-3*l) + x*dl + l);
 	}
@@ -196,6 +200,7 @@ class Display extends JFrame{
 		}
 	}
 	
+	// Generate map layers for the saved version.
 	private static final String[] layerNames = {"base", "settlements", "roads", "borders", "kingdoms"};
 	private static final int LAYER_BASE = 0;
 	private static final int LAYER_SETTLEMENTS = 1;

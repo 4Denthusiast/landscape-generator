@@ -41,7 +41,7 @@ public class Settlements{
 		double wetness = water.getDrainage(p);
 		for(int i=0; i<adj.length; i++)
 			wetness = wetness + 0.2*water.getOutDrainage(adj[i]) + 0.002*water.getDrainage(adj[i]);
-			//the outDrainage of the sea is nearly 0.
+			//the outDrainage of the sea is nearly 0. Tiny lakes aren't very useful for trade, but larger lakes aren't that much more useful than largish ones.
 		problems += 2.5/wetness; //Rivers and shores are good places to live.
 		/*double steepness = 0;
 		double height = heightMap.getHeight(p);

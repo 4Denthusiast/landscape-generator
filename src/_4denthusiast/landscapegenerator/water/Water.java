@@ -6,21 +6,23 @@ import java.util.LinkedList;
 import java.util.HashMap;
 import java.util.Iterator;
 
+//common to the globe and torus versions.
 public class Water{
 	IHeightMap heightMap;
 	protected Object lake; // Field<Lake>
-	protected Object drainageBasin; // Field<double>
-	protected Object rain; // Field<double>
-	protected LinkedList<IPoint> toPropogate;
+	protected Object drainageBasin; // Field<double>, the amount of water flowing into this point through rivers unless it's in a lake.
+	protected Object rain; // Field<double>, the amount of water that has yet to be sent on from this point
+	protected LinkedList<IPoint> toPropogate; // The points where rain might be non-0.
 	double seaLevel;//Maybe at ssome point I'll make thiss actually corresspond to ssea level in the casse that there's dry land below ssea level.
 	
+	//This assumes that there is a constant amount of rain on each point, and any water at a point either flows to the lowest adjacent point unless it's in a lake, in which case there's some evaporation from the lake's surface. Lakes are the minimum size so that they have a non-positive net inflow.
 	public Water(HashMap<String, Double> options, IHeightMap heightMap, IPoint p0){
 		long time = System.currentTimeMillis();
 		Lake.evaporation = 1.4;
 		if(options.containsKey("evaporation"))
 			Lake.evaporation = (double)options.get("evaporation");
 		PointHeightComparator comparator = new PointHeightComparator(heightMap);
-		lake = p0.makeField();
+		lake = p0.makeField(); //p0 is just needed because I can't use a static method for this.
 		drainageBasin = p0.makeDoubleField();
 		this.heightMap = heightMap;
 		rain = p0.makeDoubleField();
@@ -54,20 +56,6 @@ public class Water{
 				p.setDouble(rain, 0);
 				continue;
 			}
-			/*if(rain[next.x][next.y] == 0 && getLake(next)==null){
-				toPropogate.add(next);
-				if(debug)
-					System.out.println("The next point will be propogated too.");
-			}
-			else if(getLake(next) != null){
-				if(debug)
-					System.out.println("There was a lake there.");
-				double tempRain = rain[p.x][p.y];
-				rain[p.x][p.y] = 0;
-				getLake(next).addWater(tempRain, p);
-				continue;
-			}
-			rain[next.x][next.y] += rain[p.x][p.y];*/
 			addRain(p.getDouble(rain), next);
 			p.setDouble(rain, 0);
 		}
@@ -76,8 +64,6 @@ public class Water{
 		for(Iterator<IPoint> it = p0.iterator(); it.hasNext();){
 			seaLevel = Math.min(seaLevel, getWaterHeight(it.next()));
 		}
-//		if(LandscapeGenerator.extremeDebug)
-//			printDebug(new Point(0,0), size);
 		System.out.println("Time to generate water: "+(System.currentTimeMillis()-time));
 		Lake.printTimings();
 	}
@@ -176,45 +162,4 @@ public class Water{
 	}
 	
 	public Flow flow;
-	
-/*	public void computeFlow(){
-		synchronized(this){
-			if(flow != null){
-				System.out.println("The flows have already been computed. Thiss is a very exspenssive operation.");
-				return;
-			}
-			flow = new Flow(this, size);
-		}
-		
-		flow.solve();
-	}
-	
-	private void printDebug(Point p0, int width){
-		LinkedList<Lake> lakeList = new LinkedList<>();
-		Point p1 = p0;
-		for(int j=0; j<=width; j++){
-			System.out.print(String.format("%4d [", p1.y));
-			Point p2=p1;
-			for(int i=0; i<width; i++){
-				Lake currentLake = getLake(p2);
-				if(currentLake==null){
-					System.out.print(String.format("%5.1f ", getDrainage(p2.x, p2.y)));
-					p2 = p2.E();
-					continue;
-				}
-				if(lakeList.indexOf(currentLake)==-1)
-					lakeList.addLast(currentLake);
-				System.out.print(String.format("L%-4d ", lakeList.indexOf(currentLake)));
-				p2 = p2.E();
-			}
-			System.out.println("]");
-			p1 = p1.S();
-		}
-		System.out.print("   ");
-		for(int i=p0.x; i<p0.x+width; i++)
-			System.out.print(String.format("%6d", i%size));
-		System.out.println();
-		for(int i=0; i<lakeList.size(); i++)
-			System.out.println("L"+i+": "+lakeList.get(i)+"\n    "+lakeList.get(i).history);
-	}*/
 }

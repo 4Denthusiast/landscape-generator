@@ -1,4 +1,12 @@
+# Generated from the sources
 /bin/
-/config.txt
 *.jar
+
+# Program results
+/imaginary landscape */
+
+#Has frequent irrelevant changes.
+/config.txt
+
+# I don't know whether excluding libraries is appropriate, but I don't expect to be messing with this.
 /lwjgl/

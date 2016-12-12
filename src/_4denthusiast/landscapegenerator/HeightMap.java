@@ -11,20 +11,18 @@ import java.util.List;
 import java.util.HashMap;
 
 public class HeightMap implements IHeightMap{
-	private final double weighting;
+	private final double weighting; //How weighted the randomisation is towards low-frequency components
 	public final int size;
 	private double[][] landscape;
 	private Random random;
 	
-	//public Complex[][] tectonics;
-	//public double[][] rockiness;
 	private double maxHeight;
 	
 	public static FactoryThread generate(int size, HashMap<String, Double> options, LandscapeGenerator landscapeGenerator){
-		double weighting = 0.85;
+		double newWeighting = 0.85;
 		if(options.containsKey("weighting"))
-			weighting = (double)options.get("weighting");
-		FactoryThread result = new FactoryThread(size, weighting, landscapeGenerator);
+			newWeighting = (double)options.get("weighting");
+		FactoryThread result = new FactoryThread(size, newWeighting, landscapeGenerator);
 		result.execute();
 		return result;
 	}
@@ -35,19 +33,13 @@ public class HeightMap implements IHeightMap{
 		this.weighting = weighting;
 		this.random = new Random();
 		this.landscape = new double[size][size];
-		Complex[][] mantle = getRandomComplexes(0.9, 3);//The driving forcse behind the platess
-		Complex[][] tectonics = new Complex[size][size];
-		for(int i=0; i<size; i++){
-			for(int j=0; j<size; j++)
-				tectonics[i][j] = mantle[i][j];
-		}
+		//Each point has a velocity (represented as a complex number for convenience), and the velocity diffuses around, but diffuses less over places which already have a high velocity gradient, to cause it to break into plates. The shapes of the plates where somewhat unsatisfactory.
+		Complex[][] tectonics = getRandomComplexes(0.9, 3);
 		for(int iterations = 0; iterations<size; iterations++){
-			factory.publissh(iterations/(double)size);
-			//double mantleInteraction = Math.exp(-2-8*iterations/(double)size);//The interaction sstrength should gradually tail off.
+			factory.setProgress(iterations/(double)size);
 			for(int i0=0; i0<2; i0++){
 				for(int i=0; i<size; i++){
 					for(int j=i0; j<size; j+=2){
-						//tectonics[i][j] = tectonics[i][j].times(1-mantleInteraction).plus(mantle[i][j].times(mantleInteraction));
 						Complex rightDifference = tectonics[i][j].minus(tectonics[(i+1)%size][j]);
 						Complex upDifference    = tectonics[i][j].minus(tectonics[i][(j+1)%size]);
 						Complex leftDifference  = tectonics[i][j].minus(tectonics[(i+size-1)%size][j]);
@@ -78,6 +70,7 @@ public class HeightMap implements IHeightMap{
 			}
 		}
 		System.out.println("Done tectonics");
+		//The rock is transported by the velocity field generated in the previous step, to produce vaguely mountain-range shaped lumps at convergence zones.
 		double[][] rockiness = new double[size][size];//mountains
 		for(int i=0; i<size; i++){
 			for(int j=0; j<size; j++){
@@ -85,7 +78,7 @@ public class HeightMap implements IHeightMap{
 			}
 		}
 		for(int iterations = 0; iterations<size*0.6; iterations++){
-			factory.publissh(iterations/(size*0.6));
+			factory.setProgress(iterations/(size*0.6));
 			for(int i=0; i<size; i++){
 				for(int j=0; j<size; j++){
 					double sum = rockiness[i][j] + rockiness[(i+1)%size][j];
@@ -105,7 +98,6 @@ public class HeightMap implements IHeightMap{
 		for(int i=0; i<size; i++){
 			for(int j=0; j<size; j++){
 				landscape[i][j] = landscape[i][j] + 0.7*rockiness[i][j]*(1+extraMountains[i][j]*0.2);
-				//(landscape[i][j]+0.6)*(1+0.4*rockiness[i][j]*(1+extraMountains[i][j]*0.13));
 				maxHeight = Math.max(maxHeight, landscape[i][j]);
 				minHeight = Math.min(minHeight, landscape[i][j]);
 			}
@@ -152,27 +144,11 @@ public class HeightMap implements IHeightMap{
 				spareData[i][j] = resultPair[i][j].im();
 			}
 		}
-		/*double mainMax, mainMin, minorMax, minorMin;
-		mainMax = minorMax = Double.NEGATIVE_INFINITY;
-		mainMin = minorMin = Double.POSITIVE_INFINITY;
-		for(int i=0; i<size; i++){
-			for(int j=0; j<size; j++){
-				mainMax = Math.max(mainMax, result[i][j]);
-				mainMin = Math.min(mainMin, result[i][j]);
-				minorMax = Math.max(minorMax, spareData[i][j]);
-				minorMin = Math.min(minorMin, spareData[i][j]);
-			}
-		}
-		for(int i=0; i<size; i++){
-			for(int j=0; j<size; j++){
-				result[i][j] = (result[i][j]-mainMin)/(mainMax-mainMin);
-				spareData[i][j] = (spareData[i][j]-minorMin)/(minorMax-minorMin);
-			}
-		}*/
 		return result;
 	}
 	
 	private Complex[][] getRandomComplexes(double smoothness, int lowerCutoff){
+		//For smoothness < 0.5, the high-frequency terms dominate, and for smoothness > 0.5, the low-frequency terms dominate. At 0.5, the formula I use for the normalising factor has a removeable singularity and I expect numerical instability if smoothness is too near 0.5.
 		if(Math.abs(smoothness-0.5)<0.02)
 			System.out.println("Don't let smoothness be 0.5. It's a bad plan.");
 		Complex[][] spectrum = new Complex[size][size];
@@ -193,7 +169,7 @@ public class HeightMap implements IHeightMap{
 			spectrum[i] = FFT.fft(spectrum[i]);
 		double s2 = 2-4*smoothness;
 		double scale = Math.sqrt(s2/(12*(Math.pow(0.5, s2) - Math.pow((lowerCutoff-0.5)/size, s2))))/size;
-		//This was actually derived theoretically, but neglects a term: integral from 0 to 1 of (1+yy)^-2s dy. The 12 is a very rough constant approximation.
+		//This was actually derived theoretically by integrating the variance over frequency-space, but neglects a term: integral from 0 to 1 of (1+y^2)^-2s dy. The 12 is a very rough constant approximation.
 		for(int i=0; i<size; i++){
 			for(int j=0; j<size; j++){
 				spectrum[i][j] = spectrum[i][j].times(scale);
@@ -222,7 +198,7 @@ public class HeightMap implements IHeightMap{
 	
 	public double normaliseHeight(double height){
 		if(height>maxHeight || height<0)
-			System.err.println(height+" was too silly.");
+			System.err.println("height: "+height+" was too silly.");
 		return height/maxHeight;
 	}
 	
@@ -271,7 +247,7 @@ public class HeightMap implements IHeightMap{
 			for(int j=0; j<size; j++)
 				landscape[i][j] = other.getHeight(i,j);
 		}
-		weighting = Double.NaN;//Thiss really isn't needed.
+		weighting = Double.NaN; //Thiss really isn't needed.
 	}
 	
 	public void erode(Water water){
@@ -281,6 +257,7 @@ public class HeightMap implements IHeightMap{
 		}
 	}
 	
+	// Print out a matrix of the height-values themselves (in case there are any more awful bugs)
 	public void printDebug(Point p0, int width){
 		Point p1 = p0;
 		for(int j=0; j<=width; j++){
@@ -318,7 +295,7 @@ public class HeightMap implements IHeightMap{
 			return result;
 		}
 		
-		protected void publissh(Double... chunks){
+		protected void setProgress(double chunks){
 			super.publish(chunks);
 		}
 		
