@@ -91,7 +91,7 @@ class Display extends JFrame{
 		if(cPanel != null && (cPanel.shouldDisplaySettlements() || cPanel.shouldDisplayRoads() || cPanel.shouldDisplayBorders())){
 			float pop = cPanel.shouldDisplaySettlements()?(float) settlements.getPopulation(p):0f;
 			pop = (float)Math.min(Math.sqrt(pop)/6, 1);
-			float road = cPanel.shouldDisplayRoads()?(float) settlements.getPathness(p):0;
+			float road = cPanel.shouldDisplayRoads()?(float) settlements.getPathness(p)/1536:0;
 			road = (float)Math.min(road, 1);
 			float border = (cPanel.shouldDisplayBorders() && settlements.isOnBorder(p, cPanel.getKingdomCutoff()))?0.5f:0;
 			return new Color(pop, Math.max(pop,border), road);
@@ -196,7 +196,7 @@ class Display extends JFrame{
 				float pop = (float)Math.sqrt(settlements.getPopulation(p))/6;
 				return new Color(1f, (float)Math.min(pop/3,1), (float)Math.min(pop/9,1), (float)Math.min(pop,1));
 			case LAYER_ROADS:
-				return new Color(0.4f, 0.4f, 0.6f, (float)Math.min(Math.pow(settlements.getPathness(p), 0.7), 1));
+				return new Color(0.4f, 0.4f, 0.6f, (float)Math.min(Math.pow(settlements.getPathness(p)/1536, 0.7), 1));
 			case LAYER_BORDERS:
 				double cutoff = cPanel.getKingdomCutoff();
 				if(settlements.isOnBorder(p, cutoff*3))

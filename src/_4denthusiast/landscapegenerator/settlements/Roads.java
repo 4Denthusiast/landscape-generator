@@ -44,7 +44,7 @@ public class Roads{
 	}
 	
 	private void paveRoad(IPoint p, double weight){
-		p.incDouble(paths, weight/1536);
+		p.incDouble(paths, weight);
 	}
 	
 	public double getPathness(IPoint p){
