@@ -15,10 +15,11 @@ import java.nio.IntBuffer;
 
 import _4denthusiast.landscapegenerator.globe.util.*;
 
+// Generates a fibonacci spherical grid (like http://onlinelibrary.wiley.com/doi/10.1256/qj.05.227/pdf ), pretty and well-distributed
 public class Geometry{
-	private final int size;
+	private final int size; //In this case it's the total number of points (which may be any sufficiently large integer) rather than the edge-length.
 	private double[][] points;
-	private int[][] adjs;
+	private int[][] adjs; //The indices of the points adjacent to each point.
 	private int[] fibs;
 	private static final double φ = Math.PI*(Math.sqrt(5)-3);
 	private static final int[] adjPermutation = new int[]{-2,0,2,1,-1};
@@ -66,6 +67,7 @@ public class Geometry{
 					}
 				}
 			}
+			//Near the poles some points are connected to others where the difference in their indices is unusual (i.e. occurs finitely many times) so these are added as exceptions.
 			if(i==0){
 				adj.add(2,5);
 				adj.add(2,8);
@@ -108,6 +110,7 @@ public class Geometry{
 			fibs[i] = fibs[i-1] + fibs[i-2];
 	}
 	
+	//Does the tetrahedron OLMR have positive volume (considering the points ordered by their actual positions on the sphere) (i.e. should OM or LR be connected)?
 	private boolean farther(int o, int l, int m, int r){
 		if(m<0 || m>=size)
 			return true;
@@ -151,8 +154,8 @@ public class Geometry{
 	}
 	
 	public void bufferLines(){
-		ByteBuffer bb = BufferUtils.createByteBuffer(getNumLines()*3*2*4);
-		//3 dimensions * 2 ends per line * 4 bytes per int
+		ByteBuffer bb = BufferUtils.createByteBuffer(getNumLines()*2*4);
+		//2 ends per line * 4 bytes per int
 		for(int i=0; i<size; i++){
 			for(int j=0; j<adjs[i].length; j++){
 				if(adjs[i][j]>i){
@@ -166,8 +169,8 @@ public class Geometry{
 	}
 	
 	public void bufferFaces(){
-		ByteBuffer bb = BufferUtils.createByteBuffer(getNumLines()*3*3*4);
-		//3 dimensions * 3 verts per face * 4 bytes per int
+		ByteBuffer bb = BufferUtils.createByteBuffer(getNumLines()*3*4);
+		//3 verts per face * 4 bytes per int
 		for(int i=0; i<size; i++){
 			for(int j=0; j<adjs[i].length; j++){
 				int j1 = (j+1)%adjs[i].length;
@@ -209,6 +212,7 @@ public class Geometry{
 		GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, bb, GL15.GL_STREAM_DRAW);
 	}
 	
+	//This follows from Euler's identity and the fact that there all faces are triangles.
 	public int getNumLines(){
 		return size*3-6;
 	}
@@ -222,7 +226,6 @@ public class Geometry{
 	}
 	
 	public double[] getPoint(int i){
-		//If only there were some sort of immutable array without overhead to use here.
 		double[] p = new double[3];
 		System.arraycopy(points[i], 0, p, 0, 3);
 		return p;
