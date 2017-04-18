@@ -286,7 +286,7 @@ public class DisplayManager{
 		
 		bb.clear();
 		for(int i=0; i<size; i++)
-			bb.putFloat((float)settlements.getPopulation(new Point(i)));
+			bb.putFloat((float)settlements.getPopulation(new Point(i))*30000f/size);
 		bb.flip();
 		GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, a_population, GL15.glGenBuffers());
 		GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, bb, GL15.GL_STATIC_DRAW);

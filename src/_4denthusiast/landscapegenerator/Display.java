@@ -153,11 +153,11 @@ class Display extends JFrame{
 			out.mkdir();
 			writer = ImageIO.getImageWritersBySuffix("png").next();
 			for(int i=0; i<NUM_LAYERS; i++){
-				writer.setOutput(ImageIO.createImageOutputStream(new File(out, i+":"+layerNames[i]+".png")));
+				writer.setOutput(ImageIO.createImageOutputStream(new File(out, i+" "+layerNames[i]+".png")));
 				writer.write(getLayer(i));
 			}
 		}catch(NoSuchElementException e){
-			System.out.println("No PNG encoder found.");
+			System.err.println("No PNG encoder found.");
 		}catch(IOException e){
 			e.printStackTrace();
 		}finally{
