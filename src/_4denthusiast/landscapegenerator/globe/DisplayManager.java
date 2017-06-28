@@ -63,6 +63,8 @@ public class DisplayManager{
 		"layout(binding=10) buffer ConnPointers{ uint[] a_connPointers; };\n"+
 		"layout(binding=11) buffer Connections{ uint[] a_connections; };\n"+
 		"layout(binding=12) buffer EdgeIndices{ uint[] a_edgeIndices; };\n"+//For each edge in each direction, the index of its parent node
+		"layout(binding=13) buffer BorderLevels{ float[] a_borderLevel; };\n"+
+		"uniform float u_borderThreshold;\n"+
 		"uniform mat3 u_viewMat;\n"+
 		"uniform vec2 u_scale;\n"+
 		"out float v_height;\n"+
@@ -87,6 +89,10 @@ public class DisplayManager{
 		"	vec3 pos;\n"+
 		"	if(u_drawingPhase == 3){\n"+
 		"		uint edgeIndex = gl_VertexID/2;\n"+
+		"		if(a_borderLevel[edgeIndex] < u_borderThreshold){\n"+
+		"			gl_Position = vec4(0,0,0,1);\n"+
+		"			return;\n"+
+		"		}\n"+
 		"		uint subIndex = gl_VertexID%2;\n"+
 		"		uint basePoint = a_edgeIndices[edgeIndex];\n"+
 		"		uint connBaseIndex = a_connPointers[basePoint];\n"+
@@ -102,7 +108,7 @@ public class DisplayManager{
 		"		}\n"+
 		"	}else{\n"+
 		"		if(u_drawingPhase == 1)\n"+
-		"			i = a_i;\n"+//TODO: make this case use the edge_indices SSB \n"+
+		"			i = a_i;\n"+
 		"		else\n"+
 		"			i = gl_VertexID;\n"+
 		"		pos = surfacePos(i);\n"+
@@ -173,7 +179,7 @@ public class DisplayManager{
 		"	colour.rgb *= 0.5+ max(0,dot(normal, lightPos));\n"+
 //		"	colour.rgb = (v_normal+vec3(1,1,1))/2;\n"+
 		"}";
-	private int a_pos=5, a_height=6, a_waterHeight=7, a_drainage, u_drawingPhase, a_normal=8, a_population=9, a_connPointers=10, a_connections=11, a_edgeIndices=12, u_size, a_i, u_phase, u_viewMat, u_scale;
+	private int a_pos=5, a_height=6, a_waterHeight=7, a_drainage, u_drawingPhase, a_normal=8, a_population=9, a_connPointers=10, a_connections=11, a_edgeIndices=12, a_borderLevel=13, u_size, a_i, u_phase, u_viewMat, u_scale, u_borderThreshold;
 	private int linesBuf, facesBuf;
 	private int drawingMode = 0;
 	
@@ -200,6 +206,7 @@ public class DisplayManager{
 		u_drawingPhase = GL20.glGetUniformLocation(prog, "u_drawingPhase");
 		u_viewMat = GL20.glGetUniformLocation(prog, "u_viewMat");
 		u_scale = GL20.glGetUniformLocation(prog, "u_scale");
+		u_borderThreshold = GL20.glGetUniformLocation(prog, "u_borderThreshold");
 		GLUtils.checkGL();
 		
 		vao = GL30.glGenVertexArrays();
@@ -328,6 +335,17 @@ public class DisplayManager{
 		bb.flip();
 		GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, a_population, GL15.glGenBuffers());
 		GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, bb, GL15.GL_STATIC_DRAW);
+		
+		bb.clear();
+		for(int i=0; i<size; i++){
+			int[] adj = geo.getAdj(i);
+			for(int j=0; j<adj.length; j++)
+				bb.putFloat((float)settlements.getBorderLevel(new Point(i), new Point(adj[j])));
+		}
+		bb.flip();
+		GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, a_borderLevel, GL15.glGenBuffers());
+		GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, bb, GL15.GL_STATIC_DRAW);
+		GL20.glUniform1f(u_borderThreshold, 80f);
 		GLUtils.checkGL();
 	}
 	

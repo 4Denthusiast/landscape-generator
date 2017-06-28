@@ -71,6 +71,10 @@ public class Settlements{
 		return roads != null;
 	}
 	
+	public double getBorderLevel(IPoint p, IPoint q){
+	    return roads.getBorderLevel(p, q);
+    }
+	
 	public boolean isOnBorder(IPoint p, double level){
 		return roads.isOnBorder(p, level);
 	}

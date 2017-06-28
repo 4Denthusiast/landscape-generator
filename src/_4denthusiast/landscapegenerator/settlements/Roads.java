@@ -51,6 +51,10 @@ public class Roads{
 		return p.getDouble(paths);
 	}
 	
+	public double getBorderLevel(IPoint p, IPoint q){
+		return getWayPoint(p).getBorderLevel(getWayPoint(q));
+	}
+	
 	public boolean isOnBorder(IPoint p, double level){
 		WayPoint here = getWayPoint(p).getCapital(level);
 		IPoint[] adj = p.getAdjacent();
@@ -189,6 +193,22 @@ public class Roads{
 			while(w.parent != null && w.importance < level)
 				w = w.parent;
 			return w;
+		}
+		
+		public double getBorderLevel(WayPoint that){
+			WayPoint w0 = this;
+			WayPoint w1 = that;
+			double level = 0;
+			while(w0 != w1){
+				level = Math.min(w0.importance, w1.importance);
+				if(w0.importance < w1.importance)
+					w0 = w0.parent;
+				else
+					w1 = w1.parent;
+				if(w0 == null || w1 == null)
+					return Double.POSITIVE_INFINITY;
+			}
+			return level;
 		}
 		
 		public int getColour(){
