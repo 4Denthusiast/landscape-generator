@@ -60,6 +60,9 @@ public class DisplayManager{
 		"uniform uint u_drawingPhase;\n"+
 		"layout(binding=8) buffer Normals{ vec3[] a_normal; };\n"+
 		"layout(binding=9) buffer Populations{ float[] a_population; };\n"+
+		"layout(binding=10) buffer ConnPointers{ uint[] a_connPointers; };\n"+
+		"layout(binding=11) buffer Connections{ uint[] a_connections; };\n"+
+		"layout(binding=12) buffer EdgeIndices{ uint[] a_edgeIndices; };\n"+//For each edge in each direction, the index of its parent node
 		"uniform mat3 u_viewMat;\n"+
 		"uniform vec2 u_scale;\n"+
 		"out float v_height;\n"+
@@ -71,17 +74,46 @@ public class DisplayManager{
 		"out vec3 v_normal;\n"+
 		"out vec3 v_pos;\n"+
 		"\n"+
+		"vec3 surfacePos(uint i){\n"+
+		"	vec3 pos = vec3(a_pos[i].xyz);\n"+
+		"	float graphicalWaterHeight = 1 + 0.05*a_waterHeight[i];\n"+
+		"	if(length(pos) < graphicalWaterHeight)\n"+
+		"		pos = normalize(pos)*graphicalWaterHeight;\n"+
+		"	return pos;\n"+
+		"}\n"+
+		"\n"+
 		"void main(){\n"+
 		"	uint i;\n"+
-		"	if(u_drawingPhase == 1)\n"+
-		"		i = a_i;\n"+
-		"	else\n"+
-		"		i = gl_VertexID;\n"+
-		"	vec3 pos = vec3(a_pos[i].xyz) * u_viewMat;\n"+
-		"	if(a_height[i] < a_waterHeight[i])\n"+
-		"		pos = normalize(pos)*(1+0.05*a_waterHeight[i]);\n"+
+		"	vec3 pos;\n"+
+		"	if(u_drawingPhase == 3){\n"+
+		"		uint edgeIndex = gl_VertexID/2;\n"+
+		"		uint subIndex = gl_VertexID%2;\n"+
+		"		uint basePoint = a_edgeIndices[edgeIndex];\n"+
+		"		uint connBaseIndex = a_connPointers[basePoint];\n"+
+		"		uint n = a_connections[connBaseIndex];\n"+
+		"		uint connRelativeIndex = edgeIndex + basePoint - connBaseIndex;\n"+//The index of this edge in the adjacency list of the base point
+		"		uint endPoint  = a_connections[connBaseIndex + 1 + connRelativeIndex];\n"+
+		"		if(subIndex == 0)\n"+
+		"			pos = (surfacePos(basePoint) + surfacePos(endPoint))/2;\n"+
+		"		else{\n"+
+		"			uint thirdPointRelativeIndex = (connRelativeIndex + 1) % n;\n"+
+		"			uint thirdPoint = a_connections[connBaseIndex + 1 + thirdPointRelativeIndex];\n"+
+		"			pos = (surfacePos(basePoint) + surfacePos(endPoint) + surfacePos(thirdPoint))/3;\n"+
+		"		}\n"+
+		"	}else{\n"+
+		"		if(u_drawingPhase == 1)\n"+
+		"			i = a_i;\n"+//TODO: make this case use the edge_indices SSB \n"+
+		"		else\n"+
+		"			i = gl_VertexID;\n"+
+		"		pos = surfacePos(i);\n"+
+		"	}\n"+
+		"	if(u_drawingPhase == 3)\n"+
+		"		pos *= 1.00;\n"+
+		"	pos *= u_viewMat;\n"+
 		"	pos.xy *= u_scale;\n"+
 		"	gl_Position = vec4(pos.xy, -0.5*pos.z, 1.0);\n"+
+		"	v_pos = pos;\n"+
+		"	if(u_drawingPhase == 3) return;\n"+
 		"	v_height = a_height[i];\n"+
 		"	if(a_waterHeight[i] <= a_height[i]){\n"+
 		"		v_waterHeight = 0;\n"+
@@ -90,7 +122,6 @@ public class DisplayManager{
 		"		v_waterHeight = a_waterHeight[i];\n"+
 		"		v_lakeness = 1;\n"+
 		"	}\n"+
-		"	v_pos = pos;\n"+
 		"	v_drainage = a_drainage;\n"+
 		"	v_normal = a_normal[i] * u_viewMat;\n"+ //u_viewMat should be orthonormal.
 		"	if(u_drawingPhase == 2){\n"+
@@ -130,16 +161,19 @@ public class DisplayManager{
 		"			discard;\n"+
 		"		float r = sqrt(v_drainage)*25;\n"+
 		"		colour = vec4(0.2, 0, 2-r, r);\n"+
-		"	}else{\n"+
+		"	}else if(u_drawingPhase == 2){\n"+
 		"		float pointSize = ceil(v_pointRadius*2);\n"+
 		"		float pointDist = length(gl_PointCoord-vec2(0.5,0.5))*pointSize*2;\n"+
 		"		colour = vec4(1,1,0,v_pointRadius-pointDist);\n"+
 		"		return;\n"+ //Towns have their own light.
+		"	}else{\n"+
+		"		colour = vec4(1,1,1,1);\n"+
+		"		return;\n"+
 		"	}\n"+
 		"	colour.rgb *= 0.5+ max(0,dot(normal, lightPos));\n"+
 //		"	colour.rgb = (v_normal+vec3(1,1,1))/2;\n"+
 		"}";
-	private int a_pos=5, a_height=6, a_waterHeight=7, a_drainage, u_drawingPhase, a_normal=8, a_population=9, u_size, a_i, u_phase, u_viewMat, u_scale;
+	private int a_pos=5, a_height=6, a_waterHeight=7, a_drainage, u_drawingPhase, a_normal=8, a_population=9, a_connPointers=10, a_connections=11, a_edgeIndices=12, u_size, a_i, u_phase, u_viewMat, u_scale;
 	private int linesBuf, facesBuf;
 	private int drawingMode = 0;
 	
@@ -184,6 +218,7 @@ public class DisplayManager{
 		facesBuf = GL15.glGenBuffers();
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, facesBuf);
 		geo.bufferFaces();
+		GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, a_edgeIndices, geo.bufferEdgeIndices());
 		GLUtils.checkGL();
 		
 		cProg = GL20.glCreateProgram();
@@ -214,10 +249,11 @@ public class DisplayManager{
 	public void useLandscape(HeightMap hm, Water water, Settlements settlements){
 		GLUtils.checkGL();
 		int heightBuf = GL15.glGenBuffers();
+		int connPointerBuf = geo.bufferConnPointers();
+		int connectionsBuf = geo.bufferConnections();
 		GL20.glUseProgram(cProg);
-		GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 1 /*ConnPointers*/, geo.bufferConnPointers());
-		GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 2 /*Connections*/, GL15.glGenBuffers());
-		geo.bufferConnections();
+		GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 1 /*ConnPointers*/, connPointerBuf);
+		GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 2 /*Connections*/, connectionsBuf);
 		GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 3 /*Heights*/, heightBuf);
 		ByteBuffer bb = BufferUtils.createByteBuffer(geo.getNumLines()*2*4); //The largesst thing thiss is used for is 2*size*float
 		GLUtils.bufferDoubles(bb, hm.getHeights());
@@ -234,6 +270,8 @@ public class DisplayManager{
 		GL20.glUseProgram(prog);
 		GL30.glBindVertexArray(vao);
 		GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, a_height, heightBuf);
+		GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, a_connPointers, connPointerBuf);
+		GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, a_connections, connectionsBuf);
 		
 		GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, a_waterHeight, GL15.glGenBuffers());
 		for(int i=0; i<size; i++)
@@ -318,6 +356,7 @@ public class DisplayManager{
 		GL30.glUniform1ui(u_drawingPhase, 0);
 		switch(drawingMode){
 			case 0:
+				//phase 0: faces
 				GL11.glEnable(GL11.GL_POLYGON_OFFSET_FILL);
 				GL11.glEnable(GL11.GL_BLEND);
 				GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
@@ -325,12 +364,13 @@ public class DisplayManager{
 				GL11.glDrawElements(GL11.GL_TRIANGLES, geo.getNumFaces()*3, GL11.GL_UNSIGNED_INT, 0);
 				
 				GL11.glDepthMask(false);
-				GL30.glUniform1ui(u_drawingPhase, 1);
-				GL11.glPolygonOffset(1, 0);
+				GL30.glUniform1ui(u_drawingPhase, 1);//phase 1: rivers
 				GL11.glDrawArrays(GL11.GL_LINES, 0, geo.getNumLines()*2);
-				GL30.glUniform1ui(u_drawingPhase, 2);
-				GL11.glPolygonOffset(3, 0);
+				GL30.glUniform1ui(u_drawingPhase, 2);//phase 2: settlements
 				GL11.glDrawArrays(GL11.GL_POINTS, 0, geo.getSize());
+				GL30.glUniform1ui(u_drawingPhase, 3);//phase 3: borders
+				GL11.glPolygonOffset(3, 1);
+				GL11.glDrawArrays(GL11.GL_LINES, 0, geo.getNumLines()*4);
 				GL11.glDepthMask(true);
 			break;
 			case 1:

@@ -73,8 +73,8 @@ public class Geometry{
 				adj.add(2,8);
 			}
 			else if(i==size-1){
-				adj.add(2,size-9);
 				adj.add(2,size-6);
+				adj.add(2,size-9);
 			}else if((i==2 || i==size-3) && !farther(2,10,15,7)){
 				if(i==2)
 					adj.add(3, 15);
@@ -169,7 +169,7 @@ public class Geometry{
 	}
 	
 	public void bufferFaces(){
-		ByteBuffer bb = BufferUtils.createByteBuffer(getNumLines()*3*4);
+		ByteBuffer bb = BufferUtils.createByteBuffer(getNumFaces()*3*4);
 		//3 verts per face * 4 bytes per int
 		for(int i=0; i<size; i++){
 			for(int j=0; j<adjs[i].length; j++){
@@ -201,7 +201,7 @@ public class Geometry{
 		return buf;
 	}
 	
-	public void bufferConnections(){
+	public int bufferConnections(){
 		ByteBuffer bb = BufferUtils.createByteBuffer((getNumLines()*2 + size)*4);
 		for(int i=0; i<size; i++){
 			bb.putInt(adjs[i].length);
@@ -209,7 +209,23 @@ public class Geometry{
 				bb.putInt(adjs[i][j]);
 		}
 		bb.flip();
+		int buf = GL15.glGenBuffers();
+		GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, buf);
 		GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, bb, GL15.GL_STREAM_DRAW);
+		return buf;
+	}
+	
+	public int bufferEdgeIndices(){
+		ByteBuffer bb = BufferUtils.createByteBuffer(getNumLines()*2*4);
+		for(int i=0; i<size; i++){
+			for(int j=0; j<adjs[i].length; j++)
+				bb.putInt(i);
+		}
+		bb.flip();
+		int buf = GL15.glGenBuffers();
+		GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, buf);
+		GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, bb, GL15.GL_STREAM_DRAW);
+		return buf;
 	}
 	
 	//This follows from Euler's identity and the fact that there all faces are triangles.
