@@ -20,4 +20,5 @@ public abstract class IPoint implements Comparable<IPoint>{
 	public abstract Object makeField();
 	public abstract Object makeDoubleField();
 	public abstract IPoint[] getAdjacent();
+	public abstract double distanceTo(IPoint other);//for adjacent points
 }

@@ -46,6 +46,11 @@ public class Point extends IPoint{
 		return new Point[]{N(),E(),S(),W()};
 	}
 	
+	public double distanceTo(IPoint other){
+		//required: other is adjacent.
+		return 1;
+	}
+	
 	@Override
 	public Iterator<IPoint> iterator(){
 		return new Iterator<IPoint>(){

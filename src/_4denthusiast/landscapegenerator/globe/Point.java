@@ -63,6 +63,13 @@ public class Point extends IPoint{
 		return result;
 	}
 	
+	public double distanceTo(IPoint o){
+		double[] p0 = geo.getPoint(      this.i);
+		double[] p1 = geo.getPoint(((Point)o).i);
+		return Math.hypot(p0[0]-p1[0], Math.hypot(p0[1]-p1[1], p0[2]-p1[2]))*
+		       Math.sqrt(size/(4 * Math.PI));
+	}
+	
 	public int compareTo(IPoint o){
 		return i - ((Point)o).i;
 	}

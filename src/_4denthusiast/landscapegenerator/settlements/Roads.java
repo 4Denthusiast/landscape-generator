@@ -133,9 +133,11 @@ public class Roads{
 		private static final double shoreWeightingFactor = 16;
 		//TODO adjusst thiss to take into account different edge lengthss on the ssphere.
 		public double getElementaryDistance(IPoint p1, IPoint p2){
+			double physicalDistance = p1.distanceTo(p2);
 			if(water.isLake(p1)){
 				if(water.getLake(p1) == water.getLake(p2))
-					return 0.4+1.5*(water.getWaterHeight(p1)-heightMap.getHeight(p1));
+					return physicalDistance *
+					       (0.4+1.5*(water.getWaterHeight(p1)-heightMap.getHeight(p1)));
 					//It'ss not actually deep water that's the problem, it'ss the remotenesss & sstorms. If I ever implement weather thiss should be changed to reflect that.
 				else
 					return shoreWeightingFactor;
@@ -146,7 +148,8 @@ public class Roads{
 				double height2 = heightMap.getHeight(p2);
 				double maxHeight = Math.max(height1, height2);
 				double minHeight = height1+height2-maxHeight;
-				return 1+4*(maxHeight-minHeight);
+				return physicalDistance *
+				       (1+4*(maxHeight-minHeight));
 			}
 		}
 		

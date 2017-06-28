@@ -47,10 +47,11 @@ public class HeightMap implements IHeightMap{
 		int p = ((Point)ip).index();
 		int[] adj = geo.getAdj(p);
 		int lowestLoc = p;
-		double lowestH = heights[p];
+		double lowestH = 0;
 		for(int i=0; i<adj.length; i++){
-			if(heights[adj[i]] < lowestH){
-				lowestH = heights[adj[i]];
+			double slope = (heights[adj[i]] - heights[p]) / ip.distanceTo(new Point(adj[i]));
+			if(slope < lowestH){
+				lowestH = slope;
 				lowestLoc = adj[i];
 			}
 		}
