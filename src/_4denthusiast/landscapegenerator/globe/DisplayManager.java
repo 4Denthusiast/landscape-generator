@@ -84,6 +84,10 @@ public class DisplayManager{
 		"	return pos;\n"+
 		"}\n"+
 		"\n"+
+		"bool submerged(uint i){\n"+
+		"	return a_waterHeight[i] > a_height[i];\n"+
+		"}\n"+
+		"\n"+
 		"void main(){\n"+
 		"	uint i;\n"+
 		"	vec3 pos;\n"+
@@ -99,12 +103,30 @@ public class DisplayManager{
 		"		uint n = a_connections[connBaseIndex];\n"+
 		"		uint connRelativeIndex = edgeIndex + basePoint - connBaseIndex;\n"+//The index of this edge in the adjacency list of the base point
 		"		uint endPoint  = a_connections[connBaseIndex + 1 + connRelativeIndex];\n"+
-		"		if(subIndex == 0)\n"+
-		"			pos = (surfacePos(basePoint) + surfacePos(endPoint))/2;\n"+
-		"		else{\n"+
+		"		if(subIndex == 0){\n"+
+		"			float weighting;\n"+
+		"			if(submerged(basePoint) ^^ submerged(endPoint)){\n"+
+		"				float waterLevel = min(a_waterHeight[basePoint], a_waterHeight[endPoint]);\n"+
+		"				weighting = (waterLevel - a_height[basePoint])/(a_height[endPoint] - a_height[basePoint]);\n"+
+		"			}else\n"+
+		"				weighting = 0.5;\n"+
+		"			pos = (1-weighting)*surfacePos(basePoint) + weighting*surfacePos(endPoint);\n"+
+		"		}else{\n"+
 		"			uint thirdPointRelativeIndex = (connRelativeIndex + 1) % n;\n"+
 		"			uint thirdPoint = a_connections[connBaseIndex + 1 + thirdPointRelativeIndex];\n"+
-		"			pos = (surfacePos(basePoint) + surfacePos(endPoint) + surfacePos(thirdPoint))/3;\n"+
+		"			bool sub1 = submerged(basePoint);\n"+
+		"			bool sub2 = submerged(endPoint);\n"+
+		"			bool sub3 = submerged(thirdPoint);\n"+
+		"			if((sub1 && sub2 && sub3) || !(sub1 || sub2 || sub3))\n"+
+		"				pos = (surfacePos(basePoint) + surfacePos(endPoint) + surfacePos(thirdPoint))/3;\n"+
+		"			else{\n"+
+		"				float waterLevel = a_waterHeight[sub1? basePoint : sub2? endPoint : thirdPoint];\n"+
+		"				bool mostlyWater = ! sub1 ^^ sub2 ^^ sub3;\n"+
+		"				uint distinctPoint = (sub1 ^^ mostlyWater)? basePoint : (sub2 ^^ mostlyWater)? endPoint : thirdPoint;\n"+
+		"				float weighting = 2*(waterLevel - a_height[distinctPoint])/(a_height[basePoint] + a_height[endPoint] + a_height[thirdPoint] - 3*a_height[distinctPoint]);\n"+
+		"				vec3 dPointPos = surfacePos(distinctPoint);\n"+
+		"				pos = dPointPos + weighting/2 * (surfacePos(basePoint) + surfacePos(endPoint) + surfacePos(thirdPoint) - 3*dPointPos);\n"+
+		"			}\n"+
 		"		}\n"+
 		"	}else{\n"+
 		"		if(u_drawingPhase == 1)\n"+
@@ -345,7 +367,7 @@ public class DisplayManager{
 		bb.flip();
 		GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, a_borderLevel, GL15.glGenBuffers());
 		GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, bb, GL15.GL_STATIC_DRAW);
-		GL20.glUniform1f(u_borderThreshold, 80f);
+		GL20.glUniform1f(u_borderThreshold, size/500f);
 		GLUtils.checkGL();
 	}
 	
