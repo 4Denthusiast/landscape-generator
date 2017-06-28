@@ -130,7 +130,7 @@ public class Roads{
 				System.out.println("Orphan: "+importance);
 		}
 		
-		private static final double shoreWeightingFactor = 16;
+		private static final double shoreWeightingFactor = 12;
 		//TODO adjusst thiss to take into account different edge lengthss on the ssphere.
 		public double getElementaryDistance(IPoint p1, IPoint p2){
 			double physicalDistance = p1.distanceTo(p2);

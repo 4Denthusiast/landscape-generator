@@ -169,6 +169,7 @@ public class DisplayManager{
 		"in float v_population;\n"+
 		"in float v_pointRadius;\n"+
 		"uniform uint u_drawingPhase;\n"+
+		"uniform float u_screenSize;\n"+
 		"in vec3 v_normal;\n"+
 		"in vec3 v_pos;\n"+
 		"layout(location = 0) out vec4 colour;\n"+
@@ -177,6 +178,7 @@ public class DisplayManager{
 		"	float height = v_height * 0.2;\n"+
 		"	float waterHeight = v_lakeness == 0?-1/0 : v_waterHeight/v_lakeness;\n"+
 		"	vec3 normal = normalize(v_normal);\n"+
+		"	gl_FragDepth = gl_FragCoord.z;\n"+
 		"	if(u_drawingPhase == 0){\n"+
 		"		colour = vec4(height, height+0.3, height, 1);\n"+
 		"		if(v_height <= waterHeight){\n"+
@@ -193,6 +195,7 @@ public class DisplayManager{
 		"		float pointSize = ceil(v_pointRadius*2);\n"+
 		"		float pointDist = length(gl_PointCoord-vec2(0.5,0.5))*pointSize*2;\n"+
 		"		colour = vec4(1,1,0,v_pointRadius-pointDist);\n"+
+		"		gl_FragDepth -= 0.5*sqrt(v_pointRadius*v_pointRadius - pointDist*pointDist)/u_screenSize;\n"+//I don't know why the factor of 0.5 is necessary, but it seems to make it behave better.
 		"		return;\n"+ //Towns have their own light.
 		"	}else{\n"+
 		"		colour = vec4(1,1,1,1);\n"+
@@ -201,7 +204,7 @@ public class DisplayManager{
 		"	colour.rgb *= 0.5+ max(0,dot(normal, lightPos));\n"+
 //		"	colour.rgb = (v_normal+vec3(1,1,1))/2;\n"+
 		"}";
-	private int a_pos=5, a_height=6, a_waterHeight=7, a_drainage, u_drawingPhase, a_normal=8, a_population=9, a_connPointers=10, a_connections=11, a_edgeIndices=12, a_borderLevel=13, u_size, a_i, u_phase, u_viewMat, u_scale, u_borderThreshold;
+	private int a_pos=5, a_height=6, a_waterHeight=7, a_drainage, u_drawingPhase, a_normal=8, a_population=9, a_connPointers=10, a_connections=11, a_edgeIndices=12, a_borderLevel=13, u_size, a_i, u_phase, u_viewMat, u_scale, u_borderThreshold, u_screenSize;
 	private int linesBuf, facesBuf;
 	private int drawingMode = 0;
 	
@@ -229,6 +232,7 @@ public class DisplayManager{
 		u_viewMat = GL20.glGetUniformLocation(prog, "u_viewMat");
 		u_scale = GL20.glGetUniformLocation(prog, "u_scale");
 		u_borderThreshold = GL20.glGetUniformLocation(prog, "u_borderThreshold");
+		u_screenSize = GL20.glGetUniformLocation(prog, "u_screenSize");
 		GLUtils.checkGL();
 		
 		vao = GL30.glGenVertexArrays();
@@ -381,6 +385,7 @@ public class DisplayManager{
 		GL30.glBindVertexArray(vao);
 		float scale = (float)gui.getScale()*2;
 		GL20.glUniform2f(u_scale, scale/Display.getWidth(), scale/Display.getHeight());
+		GL20.glUniform1f(u_screenSize, scale);
 		GLUtils.bufferDoubles(viewBuffer, view);
 		viewBuffer.flip();
 		GL20.glUniformMatrix3(u_viewMat, false, viewBuffer.asFloatBuffer());
@@ -409,7 +414,7 @@ public class DisplayManager{
 				GL30.glUniform1ui(u_drawingPhase, 2);//phase 2: settlements
 				GL11.glDrawArrays(GL11.GL_POINTS, 0, geo.getSize());
 				GL30.glUniform1ui(u_drawingPhase, 3);//phase 3: borders
-				GL11.glPolygonOffset(3, 1);
+				GL11.glPolygonOffset(0, 1);
 				GL11.glDrawArrays(GL11.GL_LINES, 0, geo.getNumLines()*4);
 				GL11.glDepthMask(true);
 			break;
