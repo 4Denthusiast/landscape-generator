@@ -2,10 +2,10 @@ package _4denthusiast.landscapegenerator.settlements;
 
 import _4denthusiast.landscapegenerator.IPoint;
 import _4denthusiast.landscapegenerator.IHeightMap;
+import _4denthusiast.landscapegenerator.Pair;
 import _4denthusiast.landscapegenerator.water.Water;
 
 import java.util.*;
-import javafx.util.Pair;
 
 //This actually worked better than expected.
 public class Roads{
@@ -102,7 +102,7 @@ public class Roads{
 				WayPoint w = interested.get(i);
 				double dist = w.getDistanceTo(this);
 				for(Map.Entry<WayPoint, Pair<Double, WayPoint>> next: w.routes.entrySet()){
-					double fullDist = dist + next.getValue().getKey();
+					double fullDist = dist + next.getValue().getA();
 					if(fullDist < getDistanceTo(next.getKey()))
 						routes.put(next.getKey(), new Pair<>(fullDist, w));
 				}
@@ -116,7 +116,7 @@ public class Roads{
 			}
 			if(routes.size()>0){
 				PriorityQueue<Map.Entry<WayPoint, Pair<Double, WayPoint>>> sorted = new PriorityQueue<>(routes.size(),
-					(e1, e2) -> e1.getValue().getKey().compareTo(e2.getValue().getKey())
+					(e1, e2) -> e1.getValue().getA().compareTo(e2.getValue().getA())
 				);
 				sorted.addAll(routes.entrySet());
 				parent = sorted.peek().getKey();
@@ -160,7 +160,7 @@ public class Roads{
 			Pair<Double, WayPoint> way = routes.get(other);
 			if(way == null)
 				return Double.POSITIVE_INFINITY;
-			return way.getKey();
+			return way.getA();
 		}
 		
 		private void registerInterest(WayPoint other){
@@ -171,7 +171,7 @@ public class Roads{
 		
 		private void paveRoadTo(WayPoint other, double weight){
 			assert(routes.containsKey(other));
-			WayPoint mid = routes.get(other).getValue();
+			WayPoint mid = routes.get(other).getB();
 			if(mid == null){
 				paveRoad(location, weight/2);
 				paveRoad(other.location, weight/2);
